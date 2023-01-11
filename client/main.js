@@ -2,7 +2,7 @@ import bot from "./assets/bot.svg";
 import user from "./assets/user.svg";
 
 const form = document.querySelector("form");
-const chatChantainer = document.querySelector("#chat_container");
+const chatContainer = document.querySelector("#chat_container");
 
 let loadInterval;
 
@@ -63,7 +63,7 @@ const handleSubmit = async (e) => {
   const data = new FormData(form);
 
   // user's chatstripe
-  chatChantainer.innerHTML += chatStripe(false, data.get("prompt"));
+  chatContainer.innerHTML += chatStripe(false, data.get("prompt"));
 
   // to clear the textarea input
   form.reset();
@@ -73,17 +73,40 @@ const handleSubmit = async (e) => {
   console.log(uniqueId);
 
   // bot's chatstripe
-  chatChantainer.innerHTML += chatStripe(true, " ", uniqueId);
+  chatContainer.innerHTML += chatStripe(true, " ", uniqueId);
 
   // to focus scroll to the bottom
-  chatChantainer.scrollTop = chatChantainer.scrollHeight;
+  chatContainer.scrollTop = chatContainer.scrollHeight;
 
   // specific message div
   const messageDiv = document.getElementById(uniqueId);
 
-  messageDiv.innerHTML = "dasd";
-
   loader(messageDiv);
+
+  const response = await fetch("http://localhost:3000", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      prompt: data.get("prompt"),
+    }),
+  });
+
+  clearInterval(loadInterval);
+  messageDiv.innerHTML = " ";
+
+  if (response.ok) {
+    const data = await response.json();
+    const parsedData = data.bot.trim(); // trims any trailing spaces/'\n'
+
+    typeText(messageDiv, parsedData);
+  } else {
+    const err = await response.text();
+
+    messageDiv.innerHTML = "Something went wrong";
+    alert(err);
+  }
 };
 
 form.addEventListener("submit", handleSubmit);
